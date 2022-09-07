@@ -24,19 +24,18 @@ type Captcha struct {
 type StrType int
 
 const (
-	NUM   StrType = iota // 数字
-	LOWER                // 小写字母
-	UPPER                // 大写字母
-	ALL                  // 全部
-	CLEAR                // 去除部分易混淆的字符
+	NUM   StrType = 0 // 数字
+	LOWER         = 1 // 小写字母
+	UPPER         = 2 // 大写字母
+	ALL           = 3 // 全部
 )
 
 type DisturLevel int
 
 const (
 	NORMAL DisturLevel = 4
-	MEDIUM DisturLevel = 8
-	HIGH   DisturLevel = 16
+	MEDIUM             = 8
+	HIGH               = 16
 )
 
 func New() *Captcha {
@@ -87,6 +86,10 @@ func (c *Captcha) SetFont(paths ...string) error {
 		}
 	}
 	return nil
+}
+
+func (c *Captcha)SetFontSlice(f []*truetype.Font) {
+	c.fonts = f
 }
 
 func (c *Captcha) SetDisturbance(d DisturLevel) {
@@ -165,7 +168,7 @@ func (c *Captcha) drawNoises(img *Image) {
 	}
 
 }
-
+var FontPercent float64 = 0.8
 // 绘制文字
 func (c *Captcha) drawString(img *Image, str string) {
 
@@ -175,7 +178,7 @@ func (c *Captcha) drawString(img *Image, str string) {
 	tmp := NewImage(c.size.X, c.size.Y)
 
 	// 文字大小为图片高度的 0.6
-	fsize := int(float64(c.size.Y) * 0.6)
+	fsize := int(float64(c.size.Y) * FontPercent)
 	// 用于生成随机角度
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -198,7 +201,7 @@ func (c *Captcha) drawString(img *Image, str string) {
 		str.DrawString(font, c.frontColors[colorindex], string(char), float64(fsize))
 
 		// 转换角度后的文字图形
-		rs := str.Rotate(float64(r.Intn(40) - 20))
+		rs := str.Rotate(float64(r.Intn(60) - 20))
 		// 计算文字位置
 		s := rs.Bounds().Size()
 		left := i*gap + padding
@@ -243,7 +246,6 @@ func (c *Captcha) CreateCustom(str string) *Image {
 }
 
 var fontKinds = [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}
-var letters = []byte("34578acdefghjkmnpqstwxyABCDEFGHJKMNPQRSVWXY")
 
 // 生成随机字符串
 // size 个数 kind 模式
@@ -257,10 +259,6 @@ func (c *Captcha) randStr(size int, kind int) []byte {
 		}
 		scope, base := fontKinds[ikind][0], fontKinds[ikind][1]
 		result[i] = uint8(base + rand.Intn(scope))
-		// 不易混淆字符模式：重新生成字符
-		if kind == 4 {
-			result[i] = letters[rand.Intn(len(letters))]
-		}
 	}
 	return result
 }
